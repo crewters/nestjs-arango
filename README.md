@@ -5,6 +5,8 @@
 
 ArangoDB module for NestJS with Arangoose integration, providing a clean and type-safe way to interact with ArangoDB in your NestJS applications.
 
+###  THIS IS A WIP - Just in dev phase for now. If you'd like to contribute please open a PR or feel free to fork .
+
 ## Installation
 
 ```bash
