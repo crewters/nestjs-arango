@@ -1,5 +1,5 @@
 {
-  "name": "@nestjs/arango",
+  "name": "@crewters/nestjs-arango",
   "version": "0.1.0",
   "description": "ArangoDB module for NestJS with Arangoose integration",
   "main": "dist/index.js",
