@@ -1,12 +1,12 @@
 {
-  "name": "@crewters/nestjs-arango",
+  "name": "nestjs-arangoose",
   "version": "0.1.0",
   "description": "ArangoDB module for NestJS with Arangoose integration",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "repository": {
     "type": "git",
-    "url": "https://github.com/crewters/nestjs-arango.git"
+    "url": "https://github.com/crewters/nestjs-arangoose.git"
   },
   "keywords": [
     "nestjs",
