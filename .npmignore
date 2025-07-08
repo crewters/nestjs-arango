@@ -1,0 +1,36 @@
+# Source files
+src/
+*.ts
+!*.d.ts
+
+# Build files
+node_modules/
+dist/test
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Test and coverage files
+coverage/
+*.log
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Documentation
+*.md
+!README.md
+
+# Git
+.gitignore
+.git/
+
+# Other
+*.tgz
+*.patch
