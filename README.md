@@ -1,6 +1,6 @@
-# @crewters/nestjs-arangoose
+# nestjs-arangoose
 
-[![npm version](https://badge.fury.io/js/%40crewters%2Fnestjs-arangoose.svg)](https://badge.fury.io/js/%40crewters%2Fnestjs-arangoose)
+[![npm version](https://badge.fury.io/js/nestjs-arangoose.svg)](https://badge.fury.io/js/nestjs-arangoose)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ArangoDB module for NestJS with Arangoose integration, providing a clean and type-safe way to interact with ArangoDB in your NestJS applications.
@@ -8,9 +8,9 @@ ArangoDB module for NestJS with Arangoose integration, providing a clean and typ
 ## Installation
 
 ```bash
-npm install @crewters/nestjs-arangoose arangoose @arangodb/arangojs
+npm install nestjs-arangoose arangoose @arangodb/arangojs
 # or
-yarn add @crewters/nestjs-arangoose arangoose @arangodb/arangojs
+yarn add nestjs-arangoose arangoose @arangodb/arangojs
 ```
 
 ## Features
