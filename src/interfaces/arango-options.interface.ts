@@ -6,8 +6,8 @@ export interface ArangoAuthOptions {
 }
 
 export interface ArangoModuleOptions {
-  url: string | string[];
-  databaseName?: string;
+  url: string;
+  database?: string;
   auth?: ArangoAuthOptions;
   extra?: Record<string, any>;
 }

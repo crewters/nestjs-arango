@@ -1,49 +1,49 @@
-import { DynamicModule, Global, Module, Provider, Type } from '@nestjs/common';
-import { Database, aql } from 'arangojs';
+import { DynamicModule, Global, Module, Provider, Logger } from '@nestjs/common';
+import { Database } from 'arangojs';
 import { ARANGO_CONNECTION, ARANGO_MODULE_OPTIONS } from './arango.constants';
-import { ArangoModuleAsyncOptions, ArangoModuleOptions, ArangoModuleOptionsFactory } from './interfaces/arango-options.interface';
-
-// Import connect from arangoose with a type assertion to avoid type issues
-const { connect } = require('arangoose') as { connect: (url: string, options?: any) => Promise<void> };
+import { ArangoModuleOptions, ArangoModuleAsyncOptions, ArangoModuleOptionsFactory } from './interfaces/arango-options.interface';
 
 @Global()
 @Module({})
 export class ArangoModule {
+  private static readonly logger = new Logger('ArangoModule');
+
   static forRoot(options: ArangoModuleOptions): DynamicModule {
     const arangoConnectionProvider: Provider = {
       provide: ARANGO_CONNECTION,
       useFactory: async (): Promise<Database> => {
         try {
-          // Create a new database instance
-          // Use the first URL if an array is provided
-          const dbUrl = Array.isArray(options.url) ? options.url[0] : options.url;
+          const { url, database, auth, ...rest } = options;
+          
+          ArangoModule.logger.log(`Connecting to ArangoDB at ${url}...`);
+          
+          // Create a new database connection
           const db = new Database({
-            url: dbUrl,
-            databaseName: options.databaseName || '_system',
-            auth: options.auth,
-            ...options.extra,
+            url,
+            databaseName: database,
+            auth,
+            ...rest
           });
           
           // Test the connection
-          await db.version();
+          try {
+            await db.version();
+            ArangoModule.logger.log(`Successfully connected to database: ${database}`);
+            return db;
+          } catch (connectError) {
+            const errorMessage = connectError instanceof Error ? connectError.message : 'Unknown error';
+            ArangoModule.logger.error('Failed to establish ArangoDB connection:', errorMessage);
+            throw new Error(`Connection failed: ${errorMessage}`);
+          }
           
-          // Connect using arangoose for ODM functionality
-          // Use the first URL if an array is provided
-          const connectUrl = Array.isArray(options.url) ? options.url[0] : options.url;
-          await connect(connectUrl, {
-            database: options.databaseName || '_system',
-            auth: options.auth,
-            ...options.extra,
-          });
-          
-          return db;
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          ArangoModule.logger.error('ArangoDB Connection Error:', errorMessage);
           throw new Error(`Unable to connect to ArangoDB: ${errorMessage}`);
         }
       },
     };
-
+  
     return {
       module: ArangoModule,
       providers: [arangoConnectionProvider],
@@ -52,86 +52,57 @@ export class ArangoModule {
   }
 
   static forRootAsync(options: ArangoModuleAsyncOptions): DynamicModule {
-    const connectionProvider: Provider = {
+    const providers: Provider[] = [];
+    
+    if (options.useExisting || options.useFactory) {
+      providers.push({
+        provide: ARANGO_MODULE_OPTIONS,
+        useFactory: options.useFactory || (async () => {
+          const factory = new (options.useExisting || options.useClass)!();
+          return factory.createArangoOptions();
+        }),
+        inject: options.inject || [],
+      });
+    }
+
+    providers.push({
       provide: ARANGO_CONNECTION,
-      useFactory: async (moduleOptions: ArangoModuleOptions): Promise<Database> => {
+      useFactory: async (moduleOptions: ArangoModuleOptions) => {
         try {
-          // Create a new database instance
-          // Use the first URL if an array is provided
-          const dbUrl = Array.isArray(moduleOptions.url) ? moduleOptions.url[0] : moduleOptions.url;
+          const { url, database, auth, ...rest } = moduleOptions;
+          
+          ArangoModule.logger.log(`Connecting to ArangoDB at ${url}...`);
+          
+          // Create a new database connection
           const db = new Database({
-            url: dbUrl,
-            databaseName: moduleOptions.databaseName || '_system',
-            auth: moduleOptions.auth,
-            ...moduleOptions.extra,
+            url,
+            databaseName: database,
+            auth,
+            ...rest
           });
           
           // Test the connection
           await db.version();
-          
-          // Connect using arangoose for ODM functionality
-          // Use the first URL if an array is provided
-          const connectUrl = Array.isArray(moduleOptions.url) ? moduleOptions.url[0] : moduleOptions.url;
-          await connect(connectUrl, {
-            database: moduleOptions.databaseName || '_system',
-            auth: moduleOptions.auth,
-            ...moduleOptions.extra,
-          });
-          
+          ArangoModule.logger.log(`Successfully connected to database: ${database}`);
           return db;
+          
         } catch (error) {
           const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          ArangoModule.logger.error('ArangoDB Connection Error:', errorMessage);
           throw new Error(`Unable to connect to ArangoDB: ${errorMessage}`);
         }
       },
       inject: [ARANGO_MODULE_OPTIONS],
-    };
-
-    const asyncProviders = this.createAsyncProviders(options);
-
+    });
+    
     return {
       module: ArangoModule,
       imports: options.imports || [],
-      providers: [...asyncProviders, connectionProvider],
-      exports: [connectionProvider],
-    };
-  }
-
-  private static createAsyncProviders(options: ArangoModuleAsyncOptions): Provider[] {
-    if (options.useExisting || options.useFactory) {
-      return [this.createAsyncOptionsProvider(options)];
-    }
-
-    const useClass = options.useClass as Type<ArangoModuleOptionsFactory>;
-    return [
-      this.createAsyncOptionsProvider(options),
-      {
-        provide: useClass,
-        useClass,
-      },
-    ];
-  }
-
-  private static createAsyncOptionsProvider(
-    options: ArangoModuleAsyncOptions,
-  ): Provider {
-    if (options.useFactory) {
-      return {
-        provide: ARANGO_MODULE_OPTIONS,
-        useFactory: options.useFactory,
-        inject: options.inject || [],
-      };
-    }
-
-    const inject = [
-      (options.useClass || options.useExisting) as Type<ArangoModuleOptionsFactory>,
-    ];
-
-    return {
-      provide: ARANGO_MODULE_OPTIONS,
-      useFactory: async (optionsFactory: ArangoModuleOptionsFactory) =>
-        await optionsFactory.createArangoOptions(),
-      inject,
+      providers: [
+        ...providers,
+        ...(options.extraProviders || []),
+      ],
+      exports: [ARANGO_CONNECTION],
     };
   }
 }
